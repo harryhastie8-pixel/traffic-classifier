@@ -2,9 +2,8 @@
 
 This project contains an asynchronous TCP server for detecting anomalous network traffic using a pre-trained Isolation Forest model.
 
-This is designed to be a service running in a terminal. Data is batched and converted to JSON format. At periodic time intervals, these batches are passed to the server to detect any nefarious network activity.
 
-The server runs the data through the machine learning pipeline and triggers alarms if any instance is identified as anomalous.
+Batches of telemetry network data is parsed to the server in an specific json format. The server parses these batches to an ML pipeline that sents a message back to the client if any instance is identified as anomalous.
 
 This repository also contains the code used to train the model.
 
