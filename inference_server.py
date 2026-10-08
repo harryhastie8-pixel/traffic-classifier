@@ -5,11 +5,6 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OrdinalEncoder, MinMaxScaler
-
-
 
 # Load model and features
 prediction_pipeline = joblib.load("inferencePipeline.pkl")
@@ -22,37 +17,44 @@ async def handle_client(reader, writer):
     print(f"Connection from {address}")
 
     try:
-
         while True:
-
             data = await reader.readline()
-
             if not data:
                 break
 
             try:
-
                 # Decode JSON
-                record = json.loads(
+                records = json.loads(
                     data.decode("utf-8")
                 )
 
-                # Convert to DataFrame
-                X = pd.DataFrame([record])
+                # The JSON is expected to have the format:
+                #
+                # {
+                #     "time_1": {data},
+                #     "time_2": {data},
+                #     ...
+                # }
+                #
+                # We only need the data, so ignore the keys.
+                X = pd.DataFrame(
+                    records.values()
+                )
 
                 # Ensure expected features are present
                 X = X[predictive_features]
 
-                # Run preprocessing + model
-                prediction = prediction_pipeline.predict(X)
+                # Run the entire batch through the model pipeline
+                predictions = prediction_pipeline.predict(X)
 
                 # Isolation Forest:
                 #  1  = normal
                 # -1  = anomaly
-                if np.any(prediction == -1):
-                    result = {
-                        "anomaly": True,
-                    }
+                anomalies = predictions == -1
+
+                result = {
+                    "anomaly": bool(np.any(anomalies)),
+                }
 
                 # Send response
                 response = json.dumps(result) + "\n"
