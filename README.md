@@ -1,19 +1,16 @@
-
-
-
 # TCP Anomaly Detection Server
 
 This project contains an asynchronous TCP server for detecting anomalous network traffic using a pre-trained Isolation Forest model.
 
-This a designed to be a service running on a terminal. Data is batched and converted to json format. At perodic time intervials these batches are parsed to the server to detect any nefarious network activity. 
+This is designed to be a service running in a terminal. Data is batched and converted to JSON format. At periodic time intervals, these batches are passed to the server to detect any nefarious network activity.
 
-The server runs the data through the machine learning pipeline, and triggers alarms if any instances record was identified as anomalous.
+The server runs the data through the machine learning pipeline and triggers alarms if any instance is identified as anomalous.
 
-This reposotry also contains the .... used to train the model ,thuis notebook ... 
+This repository also contains the code used to train the model.
 
 ## How it works
 
-The server waits for a client to connect and then reads JSON records. These records are converted into a pandas DataFrame and reduced to the features expected by the model. Thses featues where found to be the mose predictive in the exploritory analysis.
+The server waits for a client to connect and then reads JSON records. These records are converted into a pandas DataFrame and reduced to the features expected by the model. These features were found to be the most predictive during exploratory analysis.
 
 The ML pipeline then handles the preprocessing and anomaly detection. Isolation Forest returns `1` for normal traffic and `-1` for anomalous traffic. The server converts this into a simple JSON response.
 
@@ -102,10 +99,9 @@ To listen on all network interfaces:
 python server.py 0.0.0.0 5000
 ```
 
-
 ### Expected input
 
-Expected input from client
+The expected input from the client is:
 
 ```json
 {
@@ -132,7 +128,8 @@ Expected input from client
 }
 ```
 
-The server ignores the time key. As this is not meaningful. We only care of there is an anomaly in the data, not the exact time it happened/ 
+The server ignores the time key because it is not meaningful for the model. We only care about whether there is an anomaly in the data, not the exact time it occurred.
+
 ### Response
 
 For example:
@@ -143,7 +140,7 @@ For example:
 }
 ```
 
-The client application interfacing with this server can then tigger alarms. 
+The client application interfacing with this server can then trigger alarms.
 
 If something goes wrong while processing a record, an error is returned instead:
 
@@ -151,39 +148,34 @@ If something goes wrong while processing a record, an error is returned instead:
 {"error":"error description"}
 ```
 
-
-
-
 ## Training the model
-The model is trained separately from the server. Once training is complete, the fitted pipeline is saved using `joblib`:
+
+The model is trained separately from the server. Once training is complete, the fitted pipeline is saved using `joblib`.
 
 The notebook performs the following steps:
 
-1. **Collects the KDD Cup 1999 dataset.** The KDD dataset is a well-known network intrusion detection dataset containing examples of both normal and malicious network activity. This is ideal to train the model.
+1. **Collects the KDD Cup 1999 dataset.** The KDD dataset is a well-known network intrusion detection dataset containing examples of both normal and malicious network activity. This makes it suitable for training the model.
 
-2. **Cleans and prepares the data.** The data is cleaned and converted into the required numerical format. Categorical features are encoded and numerical features are scaled. This is important because the model requires a consistent numerical representation of the input data. Note that one hot encoding is not used for categorical features because it unessessarly inflates the number of dimentions (increasing compute time and the required number of estimator).
+2. **Cleans and prepares the data.** The data is cleaned and converted into the required numerical format. Categorical features are encoded and numerical features are scaled. This is important because the model requires a consistent numerical representation of the input data. One-hot encoding is not used for categorical features because it unnecessarily increases the number of dimensions, which increases computational requirements and can require more estimators.
 
-3. **Performs feature engineering.** A Random Forest is used to identify features that are more predictive of anomalous behaviour. Less useful features are removed so that the anomaly detection model is less influenced by noisy or weakly correlated features. A Random Forest is useful for feature selection because it can capture non-linear relationships and interactions between features.
+3. **Performs feature engineering.** A Random Forest is used to identify features that are more predictive of anomalous behaviour. Less useful features are removed so that the anomaly detection model is less influenced by noisy or weakly informative features. A Random Forest is useful for feature selection because it can capture non-linear relationships and interactions between features.
 
-4. **Splits the data into training, validation and test sets.** The dataset is divided into 60% training data, 20% validation data and 20% test data. Anomalous samples are removed from the training data so that the Isolation Forest learns the characteristics of normal network behaviour. Othwise, the training data would become saturated with outliers, causing the model to learn these outliers as part of the baseline distribution.
+4. **Splits the data into training, validation and test sets.** The dataset is divided into 60% training data, 20% validation data and 20% test data. Anomalous samples are removed from the training data so that the Isolation Forest learns the characteristics of normal network behaviour. Otherwise, the training data could become saturated with outliers, causing the model to incorporate anomalous behaviour into the baseline distribution.
 
-5. **Trains and tunes the model.** An Isolation Forest is trained using the normal training data (with outliers remove). Hyperparameters are tuned using grid search, with model performance evaluated primarily using recall. Recall is prioritised because the objective is to identify as many anomalous network events as possible.
+5. **Trains and tunes the model.** An Isolation Forest is trained using the normal training data, with outliers removed. Hyperparameters are tuned using grid search, with model performance evaluated primarily using recall. Recall is prioritised because the objective is to identify as many anomalous network events as possible.
 
 6. **Trains the final model and constructs the inference pipeline.** The optimal hyperparameter configuration is used to train the final model. The preprocessing steps and model are then combined into a single pipeline that accepts raw network data and produces an anomaly prediction. The pipeline and selected feature list are saved for use by the server application.
 
 7. **Evaluates the final model.** The final model is evaluated using the held-out test data. Accuracy, precision, recall and F1 score are calculated, along with a confusion matrix to provide a more detailed view of the model's performance.
 
-
 ![Confusion Matrix](images/confusion_matrix.png)
 
-Key performance metrics: \n
-accuracy: 0.9935326832279906 \n
-precision: 0.9966052659208362 \n
-recall: 0.9959430156916692\n
-f1: 0.9962740307523659\n
+### Key performance metrics
 
-
-
+- **Accuracy:** 0.9935
+- **Precision:** 0.9966
+- **Recall:** 0.9959
+- **F1 score:** 0.9963
 
 ## Project structure
 
@@ -194,5 +186,7 @@ A typical directory looks like this:
 ├── server.py
 ├── inferencePipeline.pkl
 ├── predictive_features.pkl
+├── images/
+│   └── confusion_matrix.png
 └── README.md
 ```
