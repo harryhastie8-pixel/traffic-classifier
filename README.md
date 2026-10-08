@@ -83,7 +83,7 @@ The notebook performs the following steps:
 
 6. **Trains the final model and constructs the inference pipeline.** The optimal hyperparameter configuration is used to train the final model. The preprocessing steps and model are then combined into a single pipeline that accepts raw network data and produces an anomaly prediction. The pipeline and selected feature list are saved for use by the server application.
 
-7. **Evaluates the final model.** The final model is evaluated using the held-out test data. Accuracy, precision, recall and F1 score are calculated, along with a confusion matrix to provide a more detailed view of the model's performance.
+7. **Evaluates the final model.** The final model is evaluated using the test data. Accuracy, precision, recall and F1 score are calculated, along with a confusion matrix to provide a more detailed view of the model's performance.
 
 ![Confusion Matrix](images/confusion_matrix.png)
 
