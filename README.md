@@ -174,12 +174,13 @@ The notebook performs the following steps:
 7. **Evaluates the final model.** The final model is evaluated using the held-out test data. Accuracy, precision, recall and F1 score are calculated, along with a confusion matrix to provide a more detailed view of the model's performance.
 
 
-!(images/confusion_matrix.png)
+![Confusion Matrix](images/confusion_matrix.png)
 
-accuracy: 0.9935326832279906
-precision: 0.9966052659208362
-recall: 0.9959430156916692
-f1: 0.9962740307523659
+Key performance metrics: \n
+accuracy: 0.9935326832279906 \n
+precision: 0.9966052659208362 \n
+recall: 0.9959430156916692\n
+f1: 0.9962740307523659\n
 
 
 
