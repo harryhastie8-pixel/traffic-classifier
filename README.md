@@ -35,6 +35,65 @@ Anomaly result
 Client
 ```
 
+## The model
+
+Isolation Forest was used because it has relatively low compute and memory requirements and generalises well to unseen data. This makes it a good fit for running on an edge device with limited resources.
+
+The inference pipeline has two main stages:
+
+1. **Preprocessing:** The raw data is converted into the format the model expects. Categorical features are encoded numerically and numerical features are scaled using `MinMaxScaler`. Numerical features are scaled so they have a consistent range and representation when passed to the model.
+
+2. **Anomaly detection:** The processed data is passed to the trained Isolation Forest, which checks each record and determines whether it is normal or anomalous.
+
+Below is a simpe schematic of the pipeline: 
+
+Raw Network Data
+       |
+       v
++-------------------+
+|   Preprocessing   |
+|                   |
+| - Encode features |
+| - Scale numbers   |
++-------------------+
+       |
+       v
++-------------------+
+|  Isolation Forest |
++-------------------+
+
+(Note that for isolation forrest features typically do not need to be scaled because it is not a distance-based algorithm. However, it was found expermentally that scaling features incurred slightly better performance)
+
+
+## Training the model
+
+The model is trained separately from the server. Once training is complete, the fitted pipeline is saved using `joblib`.
+
+The notebook performs the following steps:
+
+1. **Collects the KDD Cup 1999 dataset.** The KDD dataset is a well-known network intrusion detection dataset containing examples of both normal and malicious network activity. This makes it suitable for training the model.
+
+2. **Cleans and prepares the data.** The data is cleaned and converted into the required numerical format. Categorical features are encoded and numerical features are scaled. This is important because the model requires a consistent numerical representation of the input data. One-hot encoding is not used for categorical features because it unnecessarily increases the number of dimensions, which increases computational requirements and can require more estimators.
+
+3. **Performs feature engineering.** A Random Forest is used to identify features that are more predictive of anomalous behaviour. Less useful features are removed so that the anomaly detection model is less influenced by noisy or weakly informative features. A Random Forest is useful for feature selection because it can capture non-linear relationships and interactions between features.
+
+4. **Splits the data into training, validation and test sets.** The dataset is divided into 60% training data, 20% validation data and 20% test data. Anomalous samples are removed from the training data so that the Isolation Forest learns the characteristics of normal network behaviour. Otherwise, the training data could become saturated with outliers, causing the model to incorporate anomalous behaviour into the baseline distribution.
+
+5. **Trains and tunes the model.** An Isolation Forest is trained using the normal training data, with outliers removed. Hyperparameters are tuned using grid search, with model performance evaluated primarily using recall. Recall is prioritised because the objective is to identify as many anomalous network events as possible.
+
+6. **Trains the final model and constructs the inference pipeline.** The optimal hyperparameter configuration is used to train the final model. The preprocessing steps and model are then combined into a single pipeline that accepts raw network data and produces an anomaly prediction. The pipeline and selected feature list are saved for use by the server application.
+
+7. **Evaluates the final model.** The final model is evaluated using the held-out test data. Accuracy, precision, recall and F1 score are calculated, along with a confusion matrix to provide a more detailed view of the model's performance.
+
+![Confusion Matrix](images/confusion_matrix.png)
+
+### Key performance metrics
+
+- **Accuracy:** 0.9935
+- **Precision:** 0.9966
+- **Recall:** 0.9959
+- **F1 score:** 0.9963
+
 ## Requirements
 
 The server requires Python 3.8+ and the following packages:
@@ -148,34 +207,6 @@ If something goes wrong while processing a record, an error is returned instead:
 {"error":"error description"}
 ```
 
-## Training the model
-
-The model is trained separately from the server. Once training is complete, the fitted pipeline is saved using `joblib`.
-
-The notebook performs the following steps:
-
-1. **Collects the KDD Cup 1999 dataset.** The KDD dataset is a well-known network intrusion detection dataset containing examples of both normal and malicious network activity. This makes it suitable for training the model.
-
-2. **Cleans and prepares the data.** The data is cleaned and converted into the required numerical format. Categorical features are encoded and numerical features are scaled. This is important because the model requires a consistent numerical representation of the input data. One-hot encoding is not used for categorical features because it unnecessarily increases the number of dimensions, which increases computational requirements and can require more estimators.
-
-3. **Performs feature engineering.** A Random Forest is used to identify features that are more predictive of anomalous behaviour. Less useful features are removed so that the anomaly detection model is less influenced by noisy or weakly informative features. A Random Forest is useful for feature selection because it can capture non-linear relationships and interactions between features.
-
-4. **Splits the data into training, validation and test sets.** The dataset is divided into 60% training data, 20% validation data and 20% test data. Anomalous samples are removed from the training data so that the Isolation Forest learns the characteristics of normal network behaviour. Otherwise, the training data could become saturated with outliers, causing the model to incorporate anomalous behaviour into the baseline distribution.
-
-5. **Trains and tunes the model.** An Isolation Forest is trained using the normal training data, with outliers removed. Hyperparameters are tuned using grid search, with model performance evaluated primarily using recall. Recall is prioritised because the objective is to identify as many anomalous network events as possible.
-
-6. **Trains the final model and constructs the inference pipeline.** The optimal hyperparameter configuration is used to train the final model. The preprocessing steps and model are then combined into a single pipeline that accepts raw network data and produces an anomaly prediction. The pipeline and selected feature list are saved for use by the server application.
-
-7. **Evaluates the final model.** The final model is evaluated using the held-out test data. Accuracy, precision, recall and F1 score are calculated, along with a confusion matrix to provide a more detailed view of the model's performance.
-
-![Confusion Matrix](images/confusion_matrix.png)
-
-### Key performance metrics
-
-- **Accuracy:** 0.9935
-- **Precision:** 0.9966
-- **Recall:** 0.9959
-- **F1 score:** 0.9963
 
 ## Project structure
 
