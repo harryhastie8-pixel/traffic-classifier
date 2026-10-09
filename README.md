@@ -42,10 +42,10 @@ The inference pipeline has two main stages:
 
 1. **Preprocessing:** The raw data is converted into the format the model expects. Categorical features are encoded numerically and numerical features are scaled using `MinMaxScaler`. Numerical features are scaled so they have a consistent range and representation when passed to the model.
 
-2. **Anomaly detection:** The processed data is passed to the trained Isolation Forest, which checks each record and determines whether it is normal or anomalous.
+2. **Anomaly detection:** The processed data is passed to the trained Isolation Forest for inference.
 
 Below is a simpe schematic of the pipeline: 
-
+```text
 Raw Network Data
        |
        v
@@ -60,7 +60,7 @@ Raw Network Data
 +-------------------+
 |  Isolation Forest |
 +-------------------+
-
+```
 (Note that for isolation forrest features typically do not need to be scaled because it is not a distance-based algorithm. However, it was found expermentally that scaling features incurred slightly better performance)
 
 
@@ -72,13 +72,13 @@ The notebook performs the following steps:
 
 1. **Collects the KDD Cup 1999 dataset.** The KDD dataset is a well-known network intrusion detection dataset containing examples of both normal and malicious network activity. This makes it suitable for training the model.
 
-2. **Cleans and prepares the data.** The data is cleaned and converted into the required numerical format. Categorical features are encoded and numerical features are scaled. This is important because the model requires a consistent numerical representation of the input data. One-hot encoding is not used for categorical features because it unnecessarily increases the number of dimensions, which increases computational requirements and can require more estimators.
+2. **Cleans and prepares the data.** The data is cleaned and converted into the required numerical format. Categorical features are encoded and numerical features are scaled. One-hot encoding is not used for encoding the categorical features because it unnecessarily increases the number of dimensions, which increases computational requirements by requireing more estimators.
 
 3. **Performs feature engineering.** A Random Forest is used to identify features that are more predictive of anomalous behaviour. Less useful features are removed so that the anomaly detection model is less influenced by noisy or weakly informative features. A Random Forest is useful for feature selection because it can capture non-linear relationships and interactions between features.
 
 4. **Splits the data into training, validation and test sets.** The dataset is divided into 60% training data, 20% validation data and 20% test data. Anomalous samples are removed from the training data so that the Isolation Forest learns the characteristics of normal network behaviour. Otherwise, the training data could become saturated with outliers, causing the model to incorporate anomalous behaviour into the baseline distribution.
 
-5. **Trains and tunes the model.** An Isolation Forest is trained using the normal training data, with outliers removed. Hyperparameters are tuned using grid search, with model performance evaluated primarily using recall. Recall is prioritised because the objective is to identify as many anomalous network events as possible.
+5. **Trains and tunes the model.** An Isolation Forest is trained using the normal training data (outliers removed). Hyperparameters are tuned using grid search, with model performance evaluated primarily using recall. Recall is prioritised because the objective is to identify as many anomalous network events as possible.
 
 6. **Trains the final model and constructs the inference pipeline.** The optimal hyperparameter configuration is used to train the final model. The preprocessing steps and model are then combined into a single pipeline that accepts raw network data and produces an anomaly prediction. The pipeline and selected feature list are saved for use by the server application.
 
@@ -92,6 +92,12 @@ The notebook performs the following steps:
 - **Precision:** 0.9966
 - **Recall:** 0.9959
 - **F1 score:** 0.9963
+
+## Improvements
+
+Performance can be further improved by extracting the anomaly score from each inference. This is a scalar measure of how easily a data point can be isolated from the rest of the dataset. A threshold can then be applied to this score to further scrutinise an inference.
+
+The threshold would need to be tuned as an additional hyperparameter. 
 
 ## Requirements
 
@@ -136,13 +142,13 @@ The feature list contains:
 The server takes the IP address and port as command-line arguments:
 
 ```bash
-python server.py <ip> <port>
+python3 inference_server.py <ip> <port>
 ```
 
 For example:
 
 ```bash
-python server.py 127.0.0.1 5000
+python3 inference_server.py 127.0.0.1 5000
 ```
 
 You should then see:
